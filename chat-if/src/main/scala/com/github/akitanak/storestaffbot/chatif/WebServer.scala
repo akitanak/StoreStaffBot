@@ -6,7 +6,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.{ActorMaterializer, Materializer}
 import com.github.akitanak.storestaffbot.chatif.controller.LineMessageController
-import com.github.akitanak.storestaffbot.chatif.request.MessageRequest
+import com.github.akitanak.storestaffbot.chatif.request.line.webhook.WebhookEvents
 import com.google.inject.Guice
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 
@@ -46,10 +46,10 @@ object WebServer {
     } ~
     path("message") {
       post {
-        entity(as[MessageRequest]) { request =>
+        entity(as[WebhookEvents]) { request =>
           val response =lineMessageController.receiveMessage(request)
           complete {
-            (StatusCodes.Accepted, response)
+            (StatusCodes.OK, response)
           }
         }
       }
