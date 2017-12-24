@@ -1,5 +1,9 @@
 package com.github.akitanak.storestaffbot.chatif.domain
 
-trait MessageSender {
+import scala.concurrent.Future
 
+trait MessageSender {
+  def replyTextMessage(message: String, token: String): Future[Unit]
+  def sendTextMessage(message: String, to: String): Future[Unit]
 }
+

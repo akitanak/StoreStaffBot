@@ -1,10 +1,10 @@
 package com.github.akitanak.storestaffbot.chatif
 
-import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.Materializer
+import com.github.akitanak.storestaffbot.chatif.ChatIfActorSystem._
 import com.github.akitanak.storestaffbot.chatif.controller.LineMessageController
 import com.github.akitanak.storestaffbot.chatif.request.line.webhook.WebhookEvents
 import com.google.inject.Guice
@@ -20,18 +20,13 @@ object WebServer {
 
   def main(args: Array[String]): Unit = {
 
-    implicit val system = ActorSystem("main-system")
-    implicit val materializer = ActorMaterializer()
-
     implicit val executionContext = system.dispatcher
 
     val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
 
     println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
     StdIn.readLine() // let it run until user presses return
-    bindingFuture
-      .flatMap(_.unbind()) // trigger unbinding from the port
-      .onComplete(_ => system.terminate()) // and shutdown when done
+    bindingFuture.flatMap(_.unbind()) // trigger unbinding from the port
   }
 
   def route(implicit materiarizer: Materializer): Route = {
