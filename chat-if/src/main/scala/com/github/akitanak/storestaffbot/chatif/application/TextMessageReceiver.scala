@@ -13,6 +13,7 @@ class TextMessageReceiver extends Actor with ActorLogging {
   override def receive: Receive = {
     case MessageEvent(token, timestamp, source: SourceUser, message: TextMessage) =>
       logger.info(s"a message received from ${source.userId}. message: [${message.id}] ${message.text}")
+
       messageSender.replyTextMessage(message.text, token)
   }
 }

@@ -18,7 +18,7 @@ class LineMessageSender extends MessageSender with Logging {
   private val authToken = ChatIfConfig.config.getString("line.auth-token")
   private val header = List(headers.Authorization(OAuth2BearerToken(authToken)))
 
-  implicit val executionContext = system.dispatcher
+  private implicit val executionContext = system.dispatcher
 
   def replyTextMessage(message: String, token: String): Future[Unit] = {
     val replyMessage = ReplyMessage(token, Seq(TextMessage(message)))
