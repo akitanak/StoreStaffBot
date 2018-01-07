@@ -17,6 +17,7 @@ lazy val chatIf = (project in file("chat-if"))
       "com.google.inject" %  "guice"           % "4.1.0",
       "com.typesafe"      %  "config"          % "1.3.2",
       "ch.qos.logback"    % "logback-classic"  % "1.2.3",
+      "net.ruippeixotog"  %% "scala-scraper"   % "2.0.0",
       "org.scalatest"     %% "scalatest"       % "3.0.4" % "test",
     )
   )

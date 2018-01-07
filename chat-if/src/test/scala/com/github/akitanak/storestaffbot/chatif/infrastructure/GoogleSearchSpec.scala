@@ -4,6 +4,9 @@ import java.net.URI
 
 import org.scalatest.{Matchers, WordSpec}
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
 class GoogleSearchSpec extends WordSpec with Matchers {
 
   "GoogleSearch" should {
@@ -14,7 +17,7 @@ class GoogleSearchSpec extends WordSpec with Matchers {
 
       val keywords = Seq("line", "at")
 
-      val results = googleSearch.searchWithKeywords(keywords)
+      val results = Await.result(googleSearch.searchWithKeywords(keywords), 5.seconds)
 
       results.head.url should be(new URI("http://at.line.me/"))
 

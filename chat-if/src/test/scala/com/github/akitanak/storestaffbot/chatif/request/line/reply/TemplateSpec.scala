@@ -78,7 +78,7 @@ class TemplateSpec extends WordSpec with Matchers {
   }
 
   "CarouselTemplate" should {
-    val template = CarouselTemplate(
+    val template = CarouselColumn(
       thumbnailImageUrl = "_url_",
       title = "_title_",
       text = "_text_",
@@ -98,7 +98,7 @@ class TemplateSpec extends WordSpec with Matchers {
     }
 
     "decode from JSON" in {
-      json.as[CarouselTemplate] should be(Right(template))
+      json.as[CarouselColumn] should be(Right(template))
     }
   }
 

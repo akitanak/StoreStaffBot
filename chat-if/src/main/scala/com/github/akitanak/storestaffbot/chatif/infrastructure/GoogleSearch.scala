@@ -14,11 +14,10 @@ class GoogleSearch extends WebSearch with Logging {
 
   override def searchWithKeywords(keywords: Seq[String]): Seq[SearchResult] = {
     val doc = JsoupBrowser().get(s"https://www.google.co.jp/search?q=${keywords.mkString("+")}")
-    println(doc.toHtml)
     val body = doc.body
     val elements = body.select("#res .g .r > a")
+
     elements.map { element =>
-      println(element.attrs)
       val url = element.attr("href")
       val title = element.text
       SearchResult(title, new URI(extractUrl(url)))

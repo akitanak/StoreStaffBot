@@ -6,7 +6,7 @@ import com.github.akitanak.storestaffbot.chatif.request.line.webhook._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import com.github.akitanak.storestaffbot.chatif.ChatIfActorSystem._
-import com.github.akitanak.storestaffbot.chatif.application.TextMessageReceiver
+import com.github.akitanak.storestaffbot.chatif.application.TextMessageFacadeActor
 
 trait LineMessageController {
   def receiveMessage(request: WebhookEvents): Future[Seq[String]]
@@ -14,7 +14,7 @@ trait LineMessageController {
 
 class LineMessageControllerImpl extends LineMessageController {
 
-  val textMessageReceiver = system.actorOf(Props[TextMessageReceiver], "txtMsgRcvr")
+  val textMessageReceiver = system.actorOf(Props[TextMessageFacadeActor], "txtMsgRcvr")
 
   override def receiveMessage(request: WebhookEvents): Future[Seq[String]] = Future {
     request.events.map {

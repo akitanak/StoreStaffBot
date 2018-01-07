@@ -76,28 +76,57 @@ object ConfirmTemplate {
   }
 }
 
-case class CarouselTemplate(thumbnailImageUrl: String, title: String, text: String, actions: Seq[Action]) extends Template("carousel")
+case class CarouselTemplate(columns: Seq[CarouselColumn], imageAspectRatio: Option[String], imageSize: Option[String]) extends Template("carousel")
 
 object CarouselTemplate {
   implicit val encode: Encoder[CarouselTemplate] = new Encoder[CarouselTemplate] {
     override final def apply(template: CarouselTemplate): Json = Json.obj(
-      "type" -> Json.fromString(template.`type`),
-      "thumbnailImageUrl" -> Json.fromString(template.thumbnailImageUrl),
-      "title" -> Json.fromString(template.title),
-      "text" -> Json.fromString(template.text),
-      "actions" -> template.actions.asJson
+      Seq(
+        Some("type" -> Json.fromString(template.`type`)),
+        Some("columns" -> template.columns.asJson),
+        template.imageAspectRatio.map("imageAspectRatio" -> Json.fromString(_)),
+        template.imageSize.map("imageSize" -> Json.fromString(_))
+      ).flatten: _*
     )
   }
 
   implicit val decode: Decoder[CarouselTemplate] = new Decoder[CarouselTemplate] {
     override final def apply(c: HCursor): Result[CarouselTemplate] =
       for {
+        columns <- c.downField("columns").as[Seq[CarouselColumn]]
+        imageAspectRatio <- c.downField("imageAspectRatio").as[String]
+        imageSize <- c.downField("imageSize").as[String]
+      } yield {
+        CarouselTemplate(columns, Option(imageAspectRatio), Option(imageSize))
+      }
+  }
+}
+
+case class CarouselColumn(thumbnailImageUrl: Option[String], imageBackgroundColor: Option[String], title: Option[String], text: String, actions: Seq[Action])
+
+object CarouselColumn {
+  implicit val encode: Encoder[CarouselColumn] = new Encoder[CarouselColumn] {
+    override final def apply(template: CarouselColumn): Json = Json.obj(
+      Seq(
+        template.thumbnailImageUrl.map("thumbnailImageUrl" -> Json.fromString(_)),
+        template.imageBackgroundColor.map("imageBackgroundColor" -> Json.fromString(_)),
+        template.title.map("title" -> Json.fromString(_)),
+        Some("text" -> Json.fromString(template.text)),
+        Some("actions" -> template.actions.asJson)
+      ).flatten: _*
+    )
+  }
+
+  implicit val decode: Decoder[CarouselColumn] = new Decoder[CarouselColumn] {
+    override final def apply(c: HCursor): Result[CarouselColumn] =
+      for {
         thumbnailImageUrl <- c.downField("thumbnailImageUrl").as[String]
+        imageBackgroundColor <- c.downField("imageBackgroundColor").as[String]
         title <- c.downField("title").as[String]
         text <- c.downField("text").as[String]
         actions <- c.downField("actions").as[Seq[Action]]
       } yield {
-        CarouselTemplate(thumbnailImageUrl, title, text, actions)
+        CarouselColumn(Option(thumbnailImageUrl), Option(imageBackgroundColor), Option(title), text, actions)
       }
   }
 }
