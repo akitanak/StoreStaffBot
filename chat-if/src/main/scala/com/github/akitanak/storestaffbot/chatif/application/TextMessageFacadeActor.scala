@@ -12,32 +12,33 @@ import com.github.akitanak.storestaffbot.chatif.domain.{MessageSender, WebSearch
 import com.github.akitanak.storestaffbot.chatif.request.line.webhook.{MessageEvent, SourceUser, TextMessage}
 import com.github.akitanak.storestaffbot.chatif.util.ActorLogging
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 case class WebSearchResults(results: Seq[SearchResult])
 
 class TextMessageFacadeActor extends Actor with ActorLogging {
 
-  val messageSender = injector.getInstance(classOf[MessageSender])
-  val webSearchActor = system.actorOf(Props[WebSearchActor], "webSearch")
-  implicit val executionContext = system.dispatcher
+  private val messageSender = injector.getInstance(classOf[MessageSender])
+  private val webSearchActor = system.actorOf(Props[WebSearchActor], "webSearch")
+  private implicit val executionContext: ExecutionContext = system.dispatcher
 
 
   override def receive: Receive = {
     case MessageEvent(token, timestamp, source: SourceUser, message: TextMessage) =>
       logger.info(s"a message received from ${source.userId}. message: [${message.id}] ${message.text}")
 
-      classifyMessage(message, token)
+      dispatchMessage(message, token)
   }
 
-  private def classifyMessage(message: TextMessage, token: String): Unit = {
+  private def dispatchMessage(message: TextMessage, token: String): Unit = {
+    implicit val timeout: Timeout = Timeout(5.seconds)
 
-    val webSearchRegex = ".*検索.*".r
-    implicit val timeout = Timeout(5.seconds)
+    val webSearchRegex = """(.+)(?:について|を)検索.*""".r
 
     message.text match {
-      case webSearchRegex() =>
-        webSearchActor ? Query(Seq(message.text)) map {
+      case webSearchRegex(searchWord) =>
+        webSearchActor ? Query(searchWord.split(" ")) map {
           case WebSearchResults(results) =>
             messageSender.replyChoicesMessage(toMessage(results), token)
           case _ =>
@@ -53,7 +54,7 @@ class TextMessageFacadeActor extends Actor with ActorLogging {
         title = None,
         text = result.title,
         actions = Seq(
-          UriAction("リンクを確認", result.url)
+          UriAction("ページを確認", result.url)
         )
       )
     }
