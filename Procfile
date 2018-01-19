@@ -1,0 +1,1 @@
+web: target/universal/stage/bin/storestaffbot target/universal/stage/bin/storestaffbot -Dhttp.port=$PORT
