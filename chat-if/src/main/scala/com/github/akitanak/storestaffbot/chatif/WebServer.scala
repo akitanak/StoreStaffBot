@@ -7,6 +7,7 @@ import akka.stream.Materializer
 import com.github.akitanak.storestaffbot.chatif.ChatIfActorSystem._
 import com.github.akitanak.storestaffbot.chatif.controller.LineMessageController
 import com.github.akitanak.storestaffbot.chatif.request.line.webhook.WebhookEvents
+import com.github.akitanak.storestaffbot.chatif.util.ChatIfConfig.config
 import com.google.inject.Guice
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 
@@ -22,9 +23,9 @@ object WebServer {
 
     implicit val executionContext = system.dispatcher
 
-    val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
+    val bindingFuture = Http().bindAndHandle(route, "localhost", config.getInt("port"))
 
-    println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
+    println(s"Server online at http://localhost:${config.getInt("port")}/\nPress RETURN to stop...")
     StdIn.readLine() // let it run until user presses return
     bindingFuture.flatMap(_.unbind()) // trigger unbinding from the port
   }
