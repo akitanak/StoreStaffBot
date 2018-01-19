@@ -5,7 +5,11 @@ lazy val commonSettings = Seq(
   scalaVersion := "2.12.4"
 )
 
-lazy val chatIf = (project in file("chat-if"))
+enablePlugins(JavaAppPackaging)
+
+mainClass in Compile := Some("com.github.akitanak.storestaffbot.chatif.WebServer")
+
+lazy val root = (project in file("chat-if"))
   .settings(
     commonSettings,
     resolvers += Resolver.bintrayRepo("hseeberger", "maven"),
