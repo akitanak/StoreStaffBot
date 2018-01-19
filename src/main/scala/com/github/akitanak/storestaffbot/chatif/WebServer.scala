@@ -23,9 +23,11 @@ object WebServer {
 
     implicit val executionContext = system.dispatcher
 
-    val bindingFuture = Http().bindAndHandle(route, "localhost", config.getInt("port"))
+    val port = config.getInt("port")
+    val interface = "0.0.0.0"
+    val bindingFuture = Http().bindAndHandle(route, interface, port)
 
-    println(s"Server online at http://localhost:${config.getInt("port")}/\nPress RETURN to stop...")
+    println(s"Server online at http://$interface:$port/\nPress RETURN to stop...")
     StdIn.readLine() // let it run until user presses return
     bindingFuture.flatMap(_.unbind()) // trigger unbinding from the port
   }
