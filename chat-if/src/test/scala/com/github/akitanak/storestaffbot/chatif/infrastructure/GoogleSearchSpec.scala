@@ -17,7 +17,7 @@ class GoogleSearchSpec extends WordSpec with Matchers {
 
       val keywords = Seq("line", "at")
 
-      val results = Await.result(googleSearch.searchWithKeywords(keywords), 5.seconds)
+      val results = googleSearch.searchWithKeywords(keywords)
 
       results.head.url should be(new URI("http://at.line.me/"))
 

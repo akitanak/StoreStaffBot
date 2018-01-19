@@ -79,15 +79,16 @@ class TemplateSpec extends WordSpec with Matchers {
 
   "CarouselTemplate" should {
     val template = CarouselColumn(
-      thumbnailImageUrl = "_url_",
-      title = "_title_",
+      thumbnailImageUrl = Some("_url_"),
+      imageBackgroundColor = Some("#FFFFFF"),
+      title = Some("_title_"),
       text = "_text_",
       actions = actions
     )
 
     val json = Json.obj(
-      "type" -> Json.fromString("carousel"),
       "thumbnailImageUrl" -> Json.fromString("_url_"),
+      "imageBackgroundColor" -> Json.fromString("#FFFFFF"),
       "title" -> Json.fromString("_title_"),
       "text" -> Json.fromString("_text_"),
       "actions" -> actionsJson
