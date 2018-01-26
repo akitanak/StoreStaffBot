@@ -44,6 +44,8 @@ class TextMessageFacadeActor extends Actor with ActorLogging {
           case _ =>
             logger.error("cannot match web search results.")
         }
+      case text =>
+        messageSender.replyTextMessage(text, token)
     }
   }
 
@@ -54,9 +56,9 @@ class TextMessageFacadeActor extends Actor with ActorLogging {
         title = None,
         text = result.title,
         actions = Seq(
-          UriAction("ページを確認", result.url)
+          UriAction("ページを確認", result.url.toURI)
         )
       )
-    }
+    }.take(10)
   }
 }

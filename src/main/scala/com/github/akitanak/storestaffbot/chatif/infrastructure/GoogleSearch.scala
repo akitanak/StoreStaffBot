@@ -1,6 +1,6 @@
 package com.github.akitanak.storestaffbot.chatif.infrastructure
 
-import java.net.URI
+import java.net.{URI, URL}
 
 import com.github.akitanak.storestaffbot.chatif.ChatIfActorSystem._
 import com.github.akitanak.storestaffbot.chatif.domain.WebSearch
@@ -9,6 +9,7 @@ import com.github.akitanak.storestaffbot.chatif.util.Logging
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 
 import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 class GoogleSearch extends WebSearch with Logging {
 
@@ -22,7 +23,7 @@ class GoogleSearch extends WebSearch with Logging {
     elements.map { element =>
       val url = element.attr("href")
       val title = element.text
-      extractUrl(url).map(uri => SearchResult(title, new URI(uri)))
+      extractUrl(url).flatMap(uri => Try(new URL(uri)).toOption).map(SearchResult(title, _))
     }.toSeq.flatten
   }
 

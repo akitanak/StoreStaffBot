@@ -27,7 +27,7 @@ object WebServer {
     val interface = "0.0.0.0"
     val bindingFuture = Http().bindAndHandle(route, interface, port)
 
-    println(s"Server online at http://$interface:$port/\nPress RETURN to stop...")
+    println(s"Server online at http://$interface:$port/")
   }
 
   def route(implicit materiarizer: Materializer): Route = {

@@ -7,11 +7,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import com.github.akitanak.storestaffbot.chatif.ChatIfActorSystem._
 import com.github.akitanak.storestaffbot.chatif.application.TextMessageFacadeActor
+import com.google.inject.Singleton
 
 trait LineMessageController {
   def receiveMessage(request: WebhookEvents): Future[Seq[String]]
 }
 
+@Singleton
 class LineMessageControllerImpl extends LineMessageController {
 
   val textMessageReceiver = system.actorOf(Props[TextMessageFacadeActor], "txtMsgRcvr")
