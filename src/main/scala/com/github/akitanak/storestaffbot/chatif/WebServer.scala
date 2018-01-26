@@ -28,8 +28,6 @@ object WebServer {
     val bindingFuture = Http().bindAndHandle(route, interface, port)
 
     println(s"Server online at http://$interface:$port/\nPress RETURN to stop...")
-    StdIn.readLine() // let it run until user presses return
-    bindingFuture.flatMap(_.unbind()) // trigger unbinding from the port
   }
 
   def route(implicit materiarizer: Materializer): Route = {
