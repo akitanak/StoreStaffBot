@@ -37,7 +37,6 @@ object WebServer {
 
     path("status") {
       get {
-        println("status check received.")
         complete(HttpEntity(ContentTypes.`application/json`, """{"status":"OK"}"""))
       }
     } ~
@@ -45,6 +44,7 @@ object WebServer {
       post {
         println("receive message.")
         entity(as[WebhookEvents]) { request =>
+          println(request)
           val response =lineMessageController.receiveMessage(request)
           complete {
             (StatusCodes.OK, response)
