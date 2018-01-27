@@ -8,12 +8,13 @@ import com.github.akitanak.storestaffbot.chatif.ChatIfActorSystem._
 import com.github.akitanak.storestaffbot.chatif.controller.LineMessageController
 import com.github.akitanak.storestaffbot.chatif.request.line.webhook.WebhookEvents
 import com.github.akitanak.storestaffbot.chatif.util.ChatIfConfig.config
+import com.github.akitanak.storestaffbot.chatif.util.Logging
 import com.google.inject.Guice
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 
 import scala.io.StdIn
 
-object WebServer {
+object WebServer extends Logging {
 
   val injector = Guice.createInjector(new ChatIfModule)
 
@@ -27,7 +28,7 @@ object WebServer {
     val interface = "0.0.0.0"
     val bindingFuture = Http().bindAndHandle(route, interface, port)
 
-    println(s"Server online at http://$interface:$port/")
+    logger.info(s"Server online at http://$interface:$port/")
   }
 
   def route(implicit materiarizer: Materializer): Route = {
@@ -42,12 +43,22 @@ object WebServer {
     } ~
     path("message") {
       post {
-        println("receive message.")
+        logger.debug("receive message.")
         entity(as[WebhookEvents]) { request =>
           println(request)
           val response =lineMessageController.receiveMessage(request)
           complete {
             (StatusCodes.OK, response)
+          }
+        }
+      }
+    } ~
+    path("token") {
+      get {
+        parameter("code".as[String]) { code =>
+          logger.debug(s"code: $code")
+          complete {
+            StatusCodes.OK
           }
         }
       }
