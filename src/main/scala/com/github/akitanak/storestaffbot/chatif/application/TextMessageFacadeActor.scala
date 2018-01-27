@@ -51,6 +51,7 @@ class TextMessageFacadeActor extends Actor with ActorLogging {
 
     message.text match {
       case webSearchRegex(searchWord) =>
+        logger.debug(s"websearch: $searchWord")
         webSearchActor ? Query(searchWord.split(" ")) map {
           case WebSearchResults(results) =>
             messageSender.replyChoicesMessage(toMessage(results), token)
@@ -58,11 +59,13 @@ class TextMessageFacadeActor extends Actor with ActorLogging {
             logger.error("cannot match web search results.")
         }
       case robotCleanerRegex() =>
+        logger.debug("robot cleaner")
         robotCleanerActor ? CheckStatus(userId) map {
           case requireToken: RequireToken =>
             messageSender.replyConfirmMessage(toMessage(requireToken), token)
         }
       case text =>
+        logger.debug(s"text: $text")
         messageSender.replyTextMessage(text, token)
     }
   }
