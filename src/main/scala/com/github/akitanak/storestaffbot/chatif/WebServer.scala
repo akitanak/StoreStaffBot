@@ -6,9 +6,9 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
 import com.github.akitanak.storestaffbot.chatif.ChatIfActorSystem._
-import com.github.akitanak.storestaffbot.chatif.application.UserAuthorized
 import com.github.akitanak.storestaffbot.chatif.controller.LineMessageController
 import com.github.akitanak.storestaffbot.chatif.domain.RobotCleanerActor
+import com.github.akitanak.storestaffbot.chatif.domain.robotcleaner.UserAuthorized
 import com.github.akitanak.storestaffbot.chatif.request.line.webhook.WebhookEvents
 import com.github.akitanak.storestaffbot.chatif.util.ChatIfConfig.config
 import com.github.akitanak.storestaffbot.chatif.util.Logging
@@ -22,7 +22,7 @@ object WebServer extends Logging {
   val injector = Guice.createInjector(new ChatIfModule)
 
   val lineMessageController = injector.getInstance(classOf[LineMessageController])
-  private val robotCleanerActor = system.actorOf(Props[RobotCleanerActor], "robotCleaner")
+  private lazy val robotCleanerActor = system.actorSelection("user/robotCleaner")
 
   def main(args: Array[String]): Unit = {
 
@@ -58,9 +58,9 @@ object WebServer extends Logging {
     } ~
     path("token") {
       get {
-        parameter("code".as[String], "status".as[String]) { (code, status) =>
-          logger.debug(s"code: $code, status(userId): $status")
-          robotCleanerActor ! UserAuthorized(status, code)
+        parameter("code".as[String], "state".as[String]) { (code, state) =>
+          logger.debug(s"code: $code, state(userId): $state")
+          robotCleanerActor ! UserAuthorized(state, code)
           complete {
             StatusCodes.OK
           }

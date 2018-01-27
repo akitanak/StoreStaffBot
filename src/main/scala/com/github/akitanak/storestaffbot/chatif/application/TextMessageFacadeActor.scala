@@ -6,7 +6,7 @@ import akka.util.Timeout
 import com.github.akitanak.storestaffbot.chatif.ChatIfActorSystem._
 import com.github.akitanak.storestaffbot.chatif.WebServer.injector
 import com.github.akitanak.storestaffbot.chatif.domain.model.websearch.SearchResult
-import com.github.akitanak.storestaffbot.chatif.domain.model.{Choice, Confirm, UriAction}
+import com.github.akitanak.storestaffbot.chatif.domain.model.{Choice, Confirm, MessageAction, UriAction}
 import com.github.akitanak.storestaffbot.chatif.domain.robotcleaner.{CheckStatus, RequireToken}
 import com.github.akitanak.storestaffbot.chatif.domain.websearch.Query
 import com.github.akitanak.storestaffbot.chatif.domain.{MessageSender, RobotCleanerActor, WebSearchActor}
@@ -17,8 +17,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 case class WebSearchResults(results: Seq[SearchResult])
-
-case class UserAuthorized(code: String, userId: String)
 
 class TextMessageFacadeActor extends Actor with ActorLogging {
   import akka.actor.OneForOneStrategy
@@ -34,6 +32,8 @@ class TextMessageFacadeActor extends Actor with ActorLogging {
   private val robotCleanerActor = system.actorOf(Props[RobotCleanerActor], "robotCleaner")
   private implicit val executionContext: ExecutionContext = system.dispatcher
 
+  private val webSearchRegex = """(.+)(?:について|を)検索.*""".r
+  private val robotCleanerRegex = """.*掃除.*""".r
 
   override def receive: Receive = {
     case MessageEvent(token, timestamp, source: SourceUser, message: TextMessage) =>
@@ -45,27 +45,26 @@ class TextMessageFacadeActor extends Actor with ActorLogging {
 
   private def dispatchMessage(message: TextMessage, token: String, userId: String): Unit = {
     implicit val timeout: Timeout = Timeout(5.seconds)
-
-    val webSearchRegex = """(.+)(?:について|を)検索.*""".r
-    val robotCleanerRegex = """.*掃除.*""".r
-
+    logger.info("dispatch message.")
     message.text match {
       case webSearchRegex(searchWord) =>
-        logger.debug(s"websearch: $searchWord")
+        logger.info(s"websearch: $searchWord")
         webSearchActor ? Query(searchWord.split(" ")) map {
           case WebSearchResults(results) =>
             messageSender.replyChoicesMessage(toMessage(results), token)
           case _ =>
             logger.error("cannot match web search results.")
         }
+
       case robotCleanerRegex() =>
-        logger.debug("robot cleaner")
+        logger.info("robot cleaner")
         robotCleanerActor ? CheckStatus(userId) map {
           case requireToken: RequireToken =>
             messageSender.replyConfirmMessage(toMessage(requireToken), token)
         }
+
       case text =>
-        logger.debug(s"text: $text")
+        logger.info(s"text: $text")
         messageSender.replyTextMessage(text, token)
     }
   }
@@ -88,7 +87,8 @@ class TextMessageFacadeActor extends Actor with ActorLogging {
     Confirm(
       message,
       actions = Seq(
-        UriAction("承認する", url.toURI)
+        UriAction("はい", url.toURI),
+        MessageAction("いいえ", "いいえ")
       )
     )
   }
