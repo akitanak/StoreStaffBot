@@ -35,6 +35,7 @@ class TextMessageFacadeActor extends Actor with ActorLogging {
     implicit val timeout: Timeout = Timeout(5.seconds)
 
     val webSearchRegex = """(.+)(?:について|を)検索.*""".r
+    val robotCleanerRegex = """.*掃除.*""".r
 
     message.text match {
       case webSearchRegex(searchWord) =>
@@ -44,8 +45,10 @@ class TextMessageFacadeActor extends Actor with ActorLogging {
           case _ =>
             logger.error("cannot match web search results.")
         }
+      case robotCleanerRegex =>
+
       case text =>
-        messageSender.replyTextMessage(text, token)
+        messageSender.replyTextMessage(s"$text\n https://google.com", token)
     }
   }
 
