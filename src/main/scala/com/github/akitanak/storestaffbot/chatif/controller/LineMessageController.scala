@@ -7,6 +7,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import com.github.akitanak.storestaffbot.chatif.ChatIfActorSystem._
 import com.github.akitanak.storestaffbot.chatif.application.TextMessageFacadeActor
+import com.github.akitanak.storestaffbot.chatif.util.Logging
 import com.google.inject.Singleton
 
 trait LineMessageController {
@@ -14,7 +15,7 @@ trait LineMessageController {
 }
 
 @Singleton
-class LineMessageControllerImpl extends LineMessageController {
+class LineMessageControllerImpl extends LineMessageController with Logging {
 
   val textMessageReceiver = system.actorOf(Props[TextMessageFacadeActor], "txtMsgRcvr")
 
@@ -26,6 +27,10 @@ class LineMessageControllerImpl extends LineMessageController {
       case _ =>
         "other webhook received."
     }
+  }.recover {
+    case t: Throwable =>
+      logger.error("unknown error.", t)
+      Seq(s"${t.getMessage}")
   }
 
   private def handleMessage(message: MessageEvent): Unit = {

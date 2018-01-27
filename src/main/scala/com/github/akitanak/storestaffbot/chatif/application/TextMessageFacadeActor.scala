@@ -6,9 +6,10 @@ import akka.util.Timeout
 import com.github.akitanak.storestaffbot.chatif.ChatIfActorSystem._
 import com.github.akitanak.storestaffbot.chatif.WebServer.injector
 import com.github.akitanak.storestaffbot.chatif.domain.model.websearch.SearchResult
-import com.github.akitanak.storestaffbot.chatif.domain.model.{Choice, UriAction}
+import com.github.akitanak.storestaffbot.chatif.domain.model.{Choice, Confirm, UriAction}
+import com.github.akitanak.storestaffbot.chatif.domain.robotcleaner.{CheckStatus, RequireToken}
 import com.github.akitanak.storestaffbot.chatif.domain.websearch.Query
-import com.github.akitanak.storestaffbot.chatif.domain.{MessageSender, WebSearchActor}
+import com.github.akitanak.storestaffbot.chatif.domain.{MessageSender, RobotCleanerActor, WebSearchActor}
 import com.github.akitanak.storestaffbot.chatif.request.line.webhook.{MessageEvent, SourceUser, TextMessage}
 import com.github.akitanak.storestaffbot.chatif.util.ActorLogging
 
@@ -17,10 +18,20 @@ import scala.concurrent.duration._
 
 case class WebSearchResults(results: Seq[SearchResult])
 
+case class UserAuthorized(code: String, userId: String)
+
 class TextMessageFacadeActor extends Actor with ActorLogging {
+  import akka.actor.OneForOneStrategy
+  import akka.actor.SupervisorStrategy._
+
+  override val supervisorStrategy =
+    OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 20 seconds) {
+      case _: Exception => Restart
+    }
 
   private val messageSender = injector.getInstance(classOf[MessageSender])
   private val webSearchActor = system.actorOf(Props[WebSearchActor], "webSearch")
+  private val robotCleanerActor = system.actorOf(Props[RobotCleanerActor], "robotCleaner")
   private implicit val executionContext: ExecutionContext = system.dispatcher
 
 
@@ -28,10 +39,11 @@ class TextMessageFacadeActor extends Actor with ActorLogging {
     case MessageEvent(token, timestamp, source: SourceUser, message: TextMessage) =>
       logger.info(s"a message received from ${source.userId}. message: [${message.id}] ${message.text}")
 
-      dispatchMessage(message, token)
+      dispatchMessage(message, token, source.userId)
+
   }
 
-  private def dispatchMessage(message: TextMessage, token: String): Unit = {
+  private def dispatchMessage(message: TextMessage, token: String, userId: String): Unit = {
     implicit val timeout: Timeout = Timeout(5.seconds)
 
     val webSearchRegex = """(.+)(?:について|を)検索.*""".r
@@ -45,10 +57,13 @@ class TextMessageFacadeActor extends Actor with ActorLogging {
           case _ =>
             logger.error("cannot match web search results.")
         }
-      case robotCleanerRegex =>
-
+      case robotCleanerRegex() =>
+        robotCleanerActor ? CheckStatus(userId) map {
+          case requireToken: RequireToken =>
+            messageSender.replyConfirmMessage(toMessage(requireToken), token)
+        }
       case text =>
-        messageSender.replyTextMessage(s"$text\n https://google.com", token)
+        messageSender.replyTextMessage(text, token)
     }
   }
 
@@ -63,5 +78,15 @@ class TextMessageFacadeActor extends Actor with ActorLogging {
         )
       )
     }.take(10)
+  }
+
+  private def toMessage(requireToken: RequireToken): Confirm = {
+    val (message, url) = requireToken.pleaseAuthThisApp
+    Confirm(
+      message,
+      actions = Seq(
+        UriAction("承認する", url.toURI)
+      )
+    )
   }
 }

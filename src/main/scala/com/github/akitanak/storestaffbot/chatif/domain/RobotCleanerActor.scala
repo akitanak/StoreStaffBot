@@ -7,14 +7,43 @@ import com.github.akitanak.storestaffbot.chatif.domain.robotcleaner.{CheckStatus
 import com.github.akitanak.storestaffbot.chatif.util.ActorLogging
 
 import scala.collection.mutable
+import scala.concurrent.duration._
 
 package robotcleaner {
+
+  import java.net.URL
+
+  import com.typesafe.config.ConfigFactory
+
   case class CheckStatus(userId: String)
   case class UserAuthorized(userId: String, code: String)
+  case class RequireToken(userId: String) {
+    import RequireToken._
+    def pleaseAuthThisApp: (String, URL) = {
+      (
+        "このアプリを認証してください。",
+        new URL(s"https://apps.neatorobotics.com/oauth2/authorize?response_type=code&client_id=$clientId&redirect_uri=$redirectUrl&scope=$requestedScope&state=$userId")
+      )
+    }
+  }
+
+  object RequireToken {
+    val conf = ConfigFactory.load.getConfig("neato")
+    val clientId = conf.getString("client-id")
+    val redirectUrl = conf.getString("redirect-url")
+    val requestedScope = conf.getString("requested-scope")
+  }
 }
 
 
 class RobotCleanerActor extends Actor with ActorLogging {
+  import akka.actor.OneForOneStrategy
+  import akka.actor.SupervisorStrategy._
+
+  override val supervisorStrategy =
+    OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 20 seconds) {
+      case _: Exception => Restart
+    }
 
   implicit val executionContext = system.dispatcher
 

@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.headers._
 import com.github.akitanak.storestaffbot.chatif.ChatIfActorSystem._
 import com.github.akitanak.storestaffbot.chatif.domain.MessageSender
 import com.github.akitanak.storestaffbot.chatif.domain.model._
-import com.github.akitanak.storestaffbot.chatif.request.line.reply.{CarouselColumn, CarouselTemplate, ReplyMessage, TemplateMessage, TextMessage, MessageAction => LineMsgAction, PostbackAction => LinePBAction, UriAction => LineUriAction}
+import com.github.akitanak.storestaffbot.chatif.request.line.reply.{CarouselColumn, CarouselTemplate, ConfirmTemplate, ReplyMessage, TemplateMessage, TextMessage, MessageAction => LineMsgAction, Action => LineAction, PostbackAction => LinePBAction, UriAction => LineUriAction}
 import com.github.akitanak.storestaffbot.chatif.util.{ChatIfConfig, Logging}
 import io.circe.syntax._
 
@@ -37,17 +37,22 @@ class LineMessageSender extends MessageSender with Logging {
           imageBackgroundColor = None,
           title = c.title,
           text = c.text,
-          actions = c.actions.map {
-            case PostbackAction(label, data, text) =>
-              LinePBAction(label, data, text)
-            case MessageAction(label, text) =>
-              LineMsgAction(label, text)
-            case UriAction(label, uri) =>
-              LineUriAction(label, uri.toString)
-          }
+          actions = actionTransformer(c.actions)
         )},
         imageAspectRatio = None,
         imageSize = None
+      )
+    )
+
+    replyMessage(ReplyMessage(token, Seq(templateMessage)))
+  }
+
+  def replyConfirmMessage(confirm: Confirm, token: String): Future[Unit] = {
+    val templateMessage = TemplateMessage(
+      altText = "確認メッセージが表示されます",
+      template = ConfirmTemplate(
+        text = confirm.text,
+        actions = actionTransformer(confirm.actions)
       )
     )
 
@@ -73,5 +78,16 @@ class LineMessageSender extends MessageSender with Logging {
 
   def sendTextMessage(message: String, to: String): Future[Unit] = {
     ???
+  }
+
+  private def actionTransformer(actions: Seq[Action]): Seq[LineAction] = {
+    actions.map {
+      case PostbackAction(label, data, text) =>
+        LinePBAction(label, data, text)
+      case MessageAction(label, text) =>
+        LineMsgAction(label, text)
+      case UriAction(label, uri) =>
+        LineUriAction(label, uri.toString)
+    }
   }
 }
